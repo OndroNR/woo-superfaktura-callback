@@ -1,6 +1,6 @@
 <?php
 /*
-Plugin Name: WooCommerce Superfaktura callback support
+Plugin Name: WooCommerce SuperFaktura callback support
 Plugin URI: https://www.akademiaalexandra.sk
 Description: Sets WooCommerce order payment status on Superfaktura callback
 Author: Ondrej Galbavy
@@ -13,9 +13,9 @@ if ( ! defined( 'WPINC' ) )
   die;
 }
 
-class WooSuperfakturaCallback {
+class WooSuperFakturaCallback {
   protected $callback_rest_namespace = 'woo_superfaktura_callback/v1';
-  protected $callback_rest_path = '/callback';
+  protected $callback_rest_path = 'callback';
 
   public function __construct() {
     add_action('admin_init', [$this, 'generate_secret_key']);
@@ -118,7 +118,7 @@ class WooSuperfakturaCallback {
     $settings[] = array(
       'title' => 'Superfaktura callback settings',
       'type' => 'title',
-      'desc' => 'Callback URL: ' . rest_url("$this->callback_rest_namespace$this->callback_rest_path"),
+      'desc' => 'Callback URL: ' . rest_url("$this->callback_rest_namespace/$this->callback_rest_path"),
       'id' => 'woocommerce_wi_invoice_title_callback'
     );
 
@@ -177,7 +177,8 @@ class WooSuperfakturaCallback {
 
 }
 
-function woo_superfaktura_callback_init() {
-  $wsc = new WooSuperfakturaCallback();
-  $wsc->load();
+function run_woo_superfaktura_callback() {
+  $wsc = new WooSuperFakturaCallback();
 }
+run_woo_superfaktura_callback();
+
