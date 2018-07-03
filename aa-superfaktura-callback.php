@@ -10,7 +10,7 @@ Author URI: https://ondrej.galbavy.sk/
 
 function aa_superfaktura_callback_handler(WP_REST_Request $request) {
   $client_secret_key = $request['secret_key'];
-  $secret_key = 'adasgdgds';
+  $secret_key = get_option('aa_superfaktura_callback_secret_key');
   if ($client_secret_key !== $secret_key) {
     return new WP_Error('invalid_secret_key', 'Invalid secret key');
   }
@@ -87,3 +87,27 @@ function aa_superfaktura_callback_handle_custom_query_var( $query, $query_vars )
 }
 add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', 'aa_superfaktura_callback_handle_custom_query_var', 10, 2 );
 
+
+
+function aa_superfaktura_callback_settings_hook($settings) {
+        $settings[] = array(
+            'title' => 'Superfaktura callback',
+            'type' => 'title',
+            'desc' => 'Callback settings',
+            'id' => 'woocommerce_wi_invoice_title_callback'
+        );
+
+        $settings[] = array(
+            'title' => 'SECRET_KEY',
+            'id' => 'aa_superfaktura_callback_secret_key',
+            'desc' => 'Secret key',
+            'type' => 'text',
+        );
+
+        $settings[] = array(
+            'type' => 'sectionend',
+            'id' => 'woocommerce_wi_invoice_title_callback'
+        );
+  return $settings;
+}
+add_filter('woocommerce_wc_superfaktura_settings', 'aa_superfaktura_callback_settings_hook', 50, 1);
