@@ -81,7 +81,7 @@ class WooSuperfakturaCallback {
 
     foreach($orders as $order) {
       if ($order->get_status() === $status_from) {
-        $order->set_status($status_to);
+        $order->set_status($status_to, 'SuperFaktura callback: ');
         $order->save();
       }
     }
