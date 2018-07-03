@@ -8,6 +8,26 @@ Version: 1
 Author URI: https://ondrej.galbavy.sk/
 */
 
+$aa_superfaktura_callback_rest_namespace = 'aa_superfaktura_callback/v1';
+$aa_superfaktura_callback_rest_path = '/callback';
+
+function aa_superfaktura_callback_init() {
+  $secret_key = get_option('aa_superfaktura_callback_secret_key');
+  if (empty($secret_key)) {
+    $length = 32;
+    $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $charactersLength = strlen($characters);
+    $randomString = '';
+    for ($i = 0; $i < $length; $i++) {
+        $randomString .= $characters[rand(0, $charactersLength - 1)];
+    }
+
+    update_option('aa_superfaktura_callback_secret_key', $randomString);
+  }
+}
+add_action('init', 'aa_superfaktura_callback_init');
+
+
 function aa_superfaktura_callback_handler(WP_REST_Request $request) {
   if (get_option('aa_superfaktura_callback_enabled') != 'yes') {
     return '';
@@ -49,9 +69,11 @@ function aa_superfaktura_callback_handler(WP_REST_Request $request) {
 }
 
 add_action('rest_api_init', function() {
-  register_rest_route('aa_superfaktura_callback/v1', '/callback', array(
+  global $aa_superfaktura_callback_rest_namespace, $aa_superfaktura_callback_rest_path;
+  register_rest_route($aa_superfaktura_callback_rest_namespace, $aa_superfaktura_callback_rest_path, array(
     'methods' => 'GET',
     'callback' => 'aa_superfaktura_callback_handler',
+    'show_in_index' => false,
     'args' => array(
       'invoice_id' => array(
         'required' => true,
@@ -97,10 +119,11 @@ add_filter( 'woocommerce_order_data_store_cpt_get_orders_query', 'aa_superfaktur
 
 
 function aa_superfaktura_callback_settings_hook($settings) {
+        global $aa_superfaktura_callback_rest_namespace, $aa_superfaktura_callback_rest_path;
         $settings[] = array(
-            'title' => 'Superfaktura callback',
+            'title' => 'Superfaktura callback settings',
             'type' => 'title',
-            'desc' => 'Callback settings',
+            'desc' => 'Callback URL: ' . rest_url("$aa_superfaktura_callback_rest_namespace$aa_superfaktura_callback_rest_path"),
             'id' => 'woocommerce_wi_invoice_title_callback'
         );
 
@@ -114,7 +137,7 @@ function aa_superfaktura_callback_settings_hook($settings) {
         $settings[] = array(
             'title' => 'SECRET_KEY',
             'id' => 'aa_superfaktura_callback_secret_key',
-            'desc' => 'Secret key',
+            'desc' => 'Keep it secret, long and random',
             'type' => 'text',
         );
 
