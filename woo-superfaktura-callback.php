@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: WooCommerce SuperFaktura callback support
-Plugin URI: https://www.akademiaalexandra.sk
+Plugin URI: https://ondrej.galbavy.sk/
 Description: Sets WooCommerce order payment status on Superfaktura callback
 Author: Ondrej Galbavy
 Version: 0.1
