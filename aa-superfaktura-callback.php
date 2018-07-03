@@ -9,6 +9,13 @@ Author URI: https://ondrej.galbavy.sk/
 */
 
 function aa_superfaktura_callback_handler(WP_REST_Request $request) {
+  if (get_option('aa_superfaktura_callback_enabled') != 'yes') {
+    return '';
+  }
+
+  $status_from = get_option('aa_superfaktura_callback_order_status_before');
+  $status_to = get_option('aa_superfaktura_callback_order_status_after');
+
   $client_secret_key = $request['secret_key'];
   $secret_key = get_option('aa_superfaktura_callback_secret_key');
   if ($client_secret_key !== $secret_key) {
@@ -27,8 +34,8 @@ function aa_superfaktura_callback_handler(WP_REST_Request $request) {
 
   // status 'on-hold' -> 'processing'
   foreach($orders as $order) {
-    if ($order->get_status() === 'on-hold') {
-      $order->set_status('processing');
+    if ($order->get_status() === $status_from) {
+      $order->set_status($status_to);
       $order->save();
     }
   }
@@ -98,10 +105,39 @@ function aa_superfaktura_callback_settings_hook($settings) {
         );
 
         $settings[] = array(
+            'title' => 'Enabled',
+            'id' => 'aa_superfaktura_callback_enabled',
+            'type' => 'checkbox',
+            'default' => 'no'
+        );
+
+        $settings[] = array(
             'title' => 'SECRET_KEY',
             'id' => 'aa_superfaktura_callback_secret_key',
             'desc' => 'Secret key',
             'type' => 'text',
+        );
+
+        $shop_order_status = aa_superfaktura_callback_get_order_statuses();
+
+        $settings[] = array(
+            'title' => 'Order status before',
+            'id' => 'aa_superfaktura_callback_order_status_before',
+            'desc' => 'Order status required before transition to payed status',
+            'default' => 'on-hold',
+            'type' => 'select',
+            'class' => 'wc-enhanced-select',
+            'options' => $shop_order_status
+        );
+
+        $settings[] = array(
+            'title' => 'Order status after',
+            'id' => 'aa_superfaktura_callback_order_status_after',
+            'desc' => 'Order status to set after payment',
+            'default' => 'processing',
+            'type' => 'select',
+            'class' => 'wc-enhanced-select',
+            'options' => $shop_order_status
         );
 
         $settings[] = array(
@@ -111,3 +147,52 @@ function aa_superfaktura_callback_settings_hook($settings) {
   return $settings;
 }
 add_filter('woocommerce_wc_superfaktura_settings', 'aa_superfaktura_callback_settings_hook', 50, 1);
+
+    function aa_superfaktura_callback_get_order_statuses()
+    {
+        if ( function_exists( 'wc_order_status_manager_get_order_status_posts' ) ) // plugin WooCommerce Order Status Manager
+        {
+            $wc_order_statuses = array_reduce(
+                wc_order_status_manager_get_order_status_posts(),
+                function($result, $item)
+                {
+                    $result[$item->post_name] = $item->post_title;
+                    return $result;
+                },
+                array()
+            );
+
+            return $wc_order_statuses;
+        }
+
+        if ( function_exists( 'wc_get_order_statuses' ) )
+        {
+            $wc_get_order_statuses = wc_get_order_statuses();
+
+            return aa_superfaktura_callback_alter_wc_statuses( $wc_get_order_statuses );
+        }
+
+        $order_status_terms = get_terms('shop_order_status','hide_empty=0');
+
+        $shop_order_statuses = array();
+        if ( ! is_wp_error( $order_status_terms ) )
+        {
+            foreach ( $order_status_terms as $term )
+            {
+                $shop_order_statuses[$term->slug] = $term->name;
+            }
+        }
+
+        return $shop_order_statuses;
+     }
+    function aa_superfaktura_callback_alter_wc_statuses( $array )
+    {
+        $new_array = array();
+        foreach ( $array as $key => $value )
+        {
+            $new_array[substr($key,3)] = $value;
+        }
+
+        return $new_array;
+    }
+
