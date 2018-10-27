@@ -22,7 +22,8 @@ class WooSuperFakturaCallback {
     add_action('rest_api_init', [$this, 'generate_secret_key']);
     add_action('rest_api_init', [$this, 'define_rest_routes']);
     add_filter('woocommerce_order_data_store_cpt_get_orders_query', [$this, 'handle_custom_query_var'], 10, 2);
-    add_filter('woocommerce_wc_superfaktura_settings', [$this, 'sf_settings_hook'], 50, 1);
+    add_filter('woocommerce_get_sections_superfaktura', [$this, 'sf_admin_sections_hook'], 50, 1);
+    add_filter('woocommerce_get_settings_superfaktura', [$this, 'sf_admin_settings_hook'], 50, 2);
   }
 
   function generate_secret_key() {
@@ -114,7 +115,17 @@ class WooSuperFakturaCallback {
   }
 
   // Extend WooCommerce Superfaktura settings page
-  function sf_settings_hook($settings) {
+  function sf_admin_sections_hook($settings) {
+    $settings['callback'] = 'Callback';
+    return $settings;
+  }
+
+  function sf_admin_settings_hook($settings, $current_section) {
+    if ($current_section !== 'callback') {
+      return $settings;
+    }
+    $settings = [];
+
     $settings[] = array(
       'title' => 'Superfaktura callback settings',
       'type' => 'title',
